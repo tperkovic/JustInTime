@@ -5,13 +5,12 @@ import com.justintime.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:9000")
+@CrossOrigin
 @RequestMapping("/user")
 public class UserController {
 
@@ -26,7 +25,6 @@ public class UserController {
     }
 
     @RequestMapping("/read-all")
-//    @ResponseBody
     public List<User> readAll(){
         List<User> users = userRepository.findAll();
 
