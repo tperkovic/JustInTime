@@ -8,5 +8,4 @@ public interface FacilityRepository extends MongoRepository<Facility, String> {
 
         Facility findByid(String id);
 
-
 }

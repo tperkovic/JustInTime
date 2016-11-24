@@ -2,6 +2,7 @@ package com.justintime.controller;
 
 import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
+import com.justintime.utils.NullAwareUtilsBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,18 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @RequestMapping("/update/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable("id") String id, User userParam){
+        User user = userRepository.findByid(id);
+        if (user == null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        NullAwareUtilsBean.CopyProperties(userParam, user);
+        userRepository.save(user);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @RequestMapping("/id/{id}")

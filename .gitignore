@@ -22,3 +22,5 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+/src/main/java/com/justintime/config/
+/src/main/java/com/justintime/security/

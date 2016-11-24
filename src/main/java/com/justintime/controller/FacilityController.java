@@ -2,13 +2,11 @@ package com.justintime.controller;
 
 import com.justintime.model.Facility;
 import com.justintime.repository.FacilityRepository;
+import com.justintime.utils.NullAwareUtilsBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,6 +32,18 @@ public class FacilityController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         return new ResponseEntity<>(facilities, HttpStatus.OK);
+    }
+
+    @RequestMapping("/update/{id}")
+    public ResponseEntity<Facility> updateFacility(@PathVariable("id") String id, Facility facilityParam){
+        Facility facility = facilityRepository.findByid(id);
+        if (facility == null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        NullAwareUtilsBean.CopyProperties(facilityParam, facility);
+        facilityRepository.save(facility);
+
+        return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
     @RequestMapping("/{id}")
