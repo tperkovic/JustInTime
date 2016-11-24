@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin
+@CrossOrigin()
 @RequestMapping("/facility")
 public class FacilityController {
 
@@ -42,6 +42,17 @@ public class FacilityController {
 
         NullAwareUtilsBean.CopyProperties(facilityParam, facility);
         facilityRepository.save(facility);
+
+        return new ResponseEntity<>(facility, HttpStatus.OK);
+    }
+
+    @RequestMapping("/delete/{id}")
+    public ResponseEntity<Facility> deleteFacility(@PathVariable("id") String id){
+        Facility facility= facilityRepository.findByid(id);
+        if (facility== null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        facilityRepository.delete(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }

@@ -49,6 +49,17 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    @RequestMapping("/delete/{id}")
+    public ResponseEntity<User> deleteUser(@PathVariable("id") String id){
+        User user = userRepository.findByid(id);
+        if (user == null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        userRepository.delete(user);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
     @RequestMapping("/id/{id}")
     public ResponseEntity<User> getUser(@PathVariable("id") String id){
         User user = userRepository.findByid(id);
