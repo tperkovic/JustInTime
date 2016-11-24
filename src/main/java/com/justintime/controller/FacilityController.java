@@ -46,6 +46,17 @@ public class FacilityController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
+    @RequestMapping("/delete/{id}")
+    public ResponseEntity<Facility> deleteFacility(@PathVariable("id") String id){
+        Facility facility= facilityRepository.findByid(id);
+        if (facility== null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        facilityRepository.delete(facility);
+
+        return new ResponseEntity<>(facility, HttpStatus.OK);
+    }
+
     @RequestMapping("/{id}")
     public ResponseEntity<Facility> getFacility(@PathVariable("id") String id){
         Facility facility = facilityRepository.findByid(id);
