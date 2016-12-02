@@ -3,16 +3,14 @@ package com.justintime.controller;
 import com.justintime.model.Facility;
 import com.justintime.model.Queue;
 import com.justintime.repository.FacilityRepository;
-import com.justintime.repository.QueueRepository;
 import com.justintime.utils.NullAwareUtilsBean;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Iterator;
 import java.util.List;
 
 @RestController
@@ -22,9 +20,6 @@ public class FacilityController {
 
     @Autowired
     FacilityRepository facilityRepository;
-
-    @Autowired
-    QueueRepository queueRepository;
 
     @RequestMapping("/create")
     public ResponseEntity<Facility> create(Facility facility){
@@ -36,8 +31,8 @@ public class FacilityController {
     @RequestMapping("{id}/create/queue")
     public ResponseEntity<Facility> createQueue(@PathVariable("id") String id, Queue queue){
         Facility facility = facilityRepository.findByid(id);
-        queue.setId(null);
-        queueRepository.save(queue);
+        ObjectId oid = new ObjectId();
+        queue.setId(oid.toString());
         facility.queues.add(queue);
 
         facilityRepository.save(facility);
@@ -69,15 +64,14 @@ public class FacilityController {
     @RequestMapping("/{idFacility}/update/queue/{id}")
     public ResponseEntity<Facility> updateFacilityQueue(@PathVariable("idFacility") String idFacility, @PathVariable("id") String id, Queue queueParam){
         Facility facility = facilityRepository.findByid(idFacility);
-        Queue queue = queueRepository.findByid(id);
-        if (facility == null || queue == null)
+        if (facility == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        int indexOfQueue = facility.queues.indexOf(queue);
-        NullAwareUtilsBean.CopyProperties(queueParam,facility.queues.get(indexOfQueue));
-        NullAwareUtilsBean.CopyProperties(queueParam, queue);
+        for (Queue queue : facility.queues)
+            if (queue.getId().equals(queueParam.getId())) {
+                NullAwareUtilsBean.CopyProperties(queueParam,queue);
+            }
 
-        queueRepository.save(queue);
         facilityRepository.save(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.OK);
@@ -96,14 +90,18 @@ public class FacilityController {
 
     @RequestMapping("/{idFacility}/delete/queue/{id}")
     public ResponseEntity<Facility> deleteFacilityQueue(@PathVariable("idFacility") String idFacility, @PathVariable("id") String id, Queue queueParam){
-        Facility facility= facilityRepository.findByid(idFacility);
-        Queue queue = queueRepository.findByid(id);
-        if (facility == null || queue == null)
+        Facility facility = facilityRepository.findByid(idFacility);
+        if (facility == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        facility.queues.remove(queue);
-        queueRepository.delete(queue);
-        facilityRepository.save(facility);
+        Iterator<Queue> iQueue = facility.queues.iterator();
+        while (iQueue.hasNext()) {
+            Queue queue = iQueue.next();
+            if (queue.getId().equals(queueParam.getId())) {
+                iQueue.remove();
+                facilityRepository.save(facility);
+            }
+        }
 
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
