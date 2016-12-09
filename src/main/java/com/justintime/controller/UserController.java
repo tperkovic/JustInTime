@@ -23,6 +23,9 @@ public class UserController {
 
     @RequestMapping("/create")
     public ResponseEntity<User> create(User user){
+//        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
+//        user.setPassword(hashedPwd);
+
         userRepository.save(user);
 
         return new ResponseEntity<>(user, HttpStatus.CREATED);
@@ -42,6 +45,9 @@ public class UserController {
         User user = userRepository.findByid(id);
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+//        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
+//        user.setPassword(hashedPwd);
 
         NullAwareUtilsBean.CopyProperties(userParam, user);
         userRepository.save(user);

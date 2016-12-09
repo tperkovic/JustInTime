@@ -6,6 +6,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface FacilityRepository extends MongoRepository<Facility, String> {
 
-        Facility findByid(String id);
-
+    Facility findByid(String id);
 }
