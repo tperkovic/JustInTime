@@ -6,6 +6,7 @@ import com.justintime.utils.NullAwareUtilsBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,8 +24,8 @@ public class UserController {
 
     @RequestMapping("/create")
     public ResponseEntity<User> create(User user){
-//        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
-//        user.setPassword(hashedPwd);
+        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
+        user.setPassword(hashedPwd);
 
         userRepository.save(user);
 
@@ -46,8 +47,8 @@ public class UserController {
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-//        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
-//        user.setPassword(hashedPwd);
+        String hashedPwd = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(13));
+        user.setPassword(hashedPwd);
 
         NullAwareUtilsBean.CopyProperties(userParam, user);
         userRepository.save(user);
