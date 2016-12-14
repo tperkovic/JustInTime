@@ -6,6 +6,7 @@ import com.justintime.utils.NullAwareUtilsBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,7 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping("/read-all")
     public ResponseEntity<List<User>> readAll(){
         List<User> users = userRepository.findAll();
@@ -76,6 +78,7 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @RequestMapping("/{mail:.+}")
     public ResponseEntity<User> getMail(@PathVariable("mail") String mail){
         User user = userRepository.findBymail(mail);
