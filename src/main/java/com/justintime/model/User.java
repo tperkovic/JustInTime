@@ -1,8 +1,6 @@
 package com.justintime.model;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -16,4 +14,5 @@ public class User {
     public String lastName;
     private String mail;
     private String password;
+    private String role;
 }
