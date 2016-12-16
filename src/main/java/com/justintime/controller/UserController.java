@@ -12,10 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,22 +31,31 @@ public class UserController {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_USER = "ROLE_USER";
+
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @RequestMapping("/create")
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
     public ResponseEntity<User> create(User user) throws Exception {
+        User existingUser = userRepository.findBymail(user.getMail());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(ROLE_USER);
+        if (existingUser.getMail().equals(user.getMail())) {
+            user.setId("User already exist!");
+            return new ResponseEntity<>(user, HttpStatus.CONFLICT);
+        }
 
         userRepository.save(user);
 
         ArrayList<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        authorities.add(new SimpleGrantedAuthority(ROLE_USER));
         inMemoryUserDetailsManager.createUser(new CustomUser(user.getMail(), user.getPassword(), authorities));
 
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/read-all")
+    @RequestMapping(value = "/read-all", method = RequestMethod.GET)
     public ResponseEntity<List<User>> readAll(){
         List<User> users = userRepository.findAll();
         if (users.isEmpty())
@@ -58,8 +64,8 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/update/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @RequestMapping(value = "/update/{id}", method = RequestMethod.PUT)
     public ResponseEntity<User> updateUser(@PathVariable("id") String id, User userParam) throws Exception {
         User user = userRepository.findByid(id);
         if (user == null)
@@ -67,6 +73,10 @@ public class UserController {
 
         if (!(userParam.getPassword() == null))
             userParam.setPassword(passwordEncoder.encode(userParam.getPassword()));
+
+        if (user.getRole() != null && user.getRole().equals(ROLE_ADMIN))
+            userParam.setRole(ROLE_ADMIN);
+        else userParam.setRole(ROLE_USER);
 
         NullAwareUtilsBean.CopyProperties(userParam, user);
         userRepository.save(user);
@@ -78,8 +88,8 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/delete/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @RequestMapping(value = "/delete/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<User> deleteUser(@PathVariable("id") String id){
         User user = userRepository.findByid(id);
         if (user == null)
@@ -91,7 +101,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/id/{id}")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<User> getUser(@PathVariable("id") String id){
         User user = userRepository.findByid(id);
         if (user == null)
@@ -101,7 +111,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/{mail:.+}")
+    @RequestMapping(value = "/{mail:.+}", method = RequestMethod.GET)
     public ResponseEntity<User> getMail(@PathVariable("mail") String mail){
         User user = userRepository.findBymail(mail);
         if (user == null)

@@ -8,12 +8,11 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @RestController
@@ -24,26 +23,16 @@ public class FacilityController {
     @Autowired
     FacilityRepository facilityRepository;
 
-    @RequestMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
     public ResponseEntity<Facility> create(Facility facility){
         facilityRepository.save(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.CREATED);
     }
 
-    @RequestMapping("{id}/create/queue")
-    public ResponseEntity<Facility> createQueue(@PathVariable("id") String id, Queue queue){
-        Facility facility = facilityRepository.findByid(id);
-        ObjectId oid = new ObjectId();
-        queue.setId(oid.toString());
-        facility.queues.add(queue);
-
-        facilityRepository.save(facility);
-
-        return new ResponseEntity<>(facility, HttpStatus.CREATED);
-    }
-
-    @RequestMapping("/read-all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/read-all", method = RequestMethod.GET)
     public ResponseEntity<List<Facility>> readAll(){
         List<Facility> facilities = facilityRepository.findAll();
         if (facilities.isEmpty())
@@ -52,7 +41,8 @@ public class FacilityController {
         return new ResponseEntity<>(facilities, HttpStatus.OK);
     }
 
-    @RequestMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/update/{id}", method = RequestMethod.PUT)
     public ResponseEntity<Facility> updateFacility(@PathVariable("id") String id, Facility facilityParam){
         Facility facility = facilityRepository.findByid(id);
         if (facility == null)
@@ -64,23 +54,8 @@ public class FacilityController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
-    @RequestMapping("/{idFacility}/update/queue/{id}")
-    public ResponseEntity<Facility> updateFacilityQueue(@PathVariable("idFacility") String idFacility, @PathVariable("id") String id, Queue queueParam){
-        Facility facility = facilityRepository.findByid(idFacility);
-        if (facility == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-        for (Queue queue : facility.queues)
-            if (queue.getId().equals(queueParam.getId())) {
-                NullAwareUtilsBean.CopyProperties(queueParam,queue);
-            }
-
-        facilityRepository.save(facility);
-
-        return new ResponseEntity<>(facility, HttpStatus.OK);
-    }
-
-    @RequestMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/delete/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<Facility> deleteFacility(@PathVariable("id") String id){
         Facility facility= facilityRepository.findByid(id);
         if (facility== null)
@@ -91,25 +66,8 @@ public class FacilityController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
-    @RequestMapping("/{idFacility}/delete/queue/{id}")
-    public ResponseEntity<Facility> deleteFacilityQueue(@PathVariable("idFacility") String idFacility, @PathVariable("id") String id, Queue queueParam){
-        Facility facility = facilityRepository.findByid(idFacility);
-        if (facility == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-        Iterator<Queue> iQueue = facility.queues.iterator();
-        while (iQueue.hasNext()) {
-            Queue queue = iQueue.next();
-            if (queue.getId().equals(queueParam.getId())) {
-                iQueue.remove();
-                facilityRepository.save(facility);
-            }
-        }
-
-        return new ResponseEntity<>(facility, HttpStatus.OK);
-    }
-
-    @RequestMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Facility> getFacility(@PathVariable("id") String id){
         Facility facility = facilityRepository.findByid(id);
         if (facility == null)
