@@ -120,23 +120,18 @@ public class QueueController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @RequestMapping(value = "/getUser/{mail:.+}", method = RequestMethod.GET)
-//    public ResponseEntity<List<Facility>> getUser(@PathVariable("mail") String mail) {
-//        List<Facility> facilities = facilityRepository.findFacilitiesByMail(mail);
-//        List<Facility> queuedFacilities = new ArrayList<>();
-//        User user = userRepository.findBymail(mail);
-//        if (user == null) {
-//            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//        }
-//
-//
-//        facilities.forEach(facility -> facility.queues.forEach(queue -> {
-//            if (queue.userList.containsValue(user))
-//                queuedFacilities.add(facility);
-//        }));
-//
-//        return new ResponseEntity<>(queuedFacilities, HttpStatus.OK);
-//    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/getUser/{mail:.+}", method = RequestMethod.GET)
+    public ResponseEntity<List<Facility>> getUser(@PathVariable("mail") String mail) {
+        List<Facility> facilities = facilityRepository.findAll();
+        List<Facility> queuedFacilities = new ArrayList<>();
+
+        facilities.forEach(facility -> facility.queues.values().forEach(queue -> queue.userList.values().forEach(user -> {
+            if (user.getMail().equals(mail))
+                queuedFacilities.add(facility);
+        })));
+
+        return new ResponseEntity<>(queuedFacilities, HttpStatus.OK);
+    }
 
 }
