@@ -1,16 +1,13 @@
 package com.justintime.controller;
 
-import com.justintime.model.Facility;
+import com.justintime.model.*;
 import com.justintime.model.Queue;
-import com.justintime.model.QueuedUser;
-import com.justintime.model.User;
 import com.justintime.repository.FacilityRepository;
 import com.justintime.repository.QueuedUserRepository;
 import com.justintime.repository.UserRepository;
 import com.justintime.utils.NullAwareUtilsBean;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +37,7 @@ public class QueueController {
         Facility facility = facilityRepository.findByid(idFacility);
         ObjectId oid = new ObjectId();
         queue.setId(oid.toString());
-        facility.queues.put(queue.getId(), queue);
+        facility.queues.add(queue);
 
         facilityRepository.save(facility);
 
@@ -54,12 +51,13 @@ public class QueueController {
         if (facility == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        Queue queue = facility.queues.get(idQueue);
-        if (queue == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        for (Queue q : facility.queues)
+            if (q.getId().equals(idQueue)) {
+                NullAwareUtilsBean.CopyProperties(queueParam,q);
+                facility.queues.add(q);
+            }
+            else return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        NullAwareUtilsBean.CopyProperties(queueParam,queue);
-        facility.queues.put(queue.getId(), queue);
         facilityRepository.save(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.OK);
@@ -72,10 +70,14 @@ public class QueueController {
         if (facility == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        if (facility.queues.get(idQueue) == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        Iterator<Queue> iterator = facility.queues.iterator();
+        while (iterator.hasNext()) {
+            Queue queue = iterator.next();
+            if (queue.getId().equals(idQueue))
+                iterator.remove();
+            else return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
-        facility.queues.remove(idQueue);
         facilityRepository.save(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.OK);
@@ -86,22 +88,37 @@ public class QueueController {
     public ResponseEntity<QueuedUser> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
         User user = userRepository.findBymail(mail);
         Facility facility = facilityRepository.findByid(idFacility);
+        QueuedUser queuedUser = queuedUserRepository.findByMail(mail);
 
         if (user == null || facility == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        Queue queue = facility.queues.get(idQueue);
+        if (queuedUser == null) {
+            QueuePriority queuePriority = new QueuePriority();
+            for (Queue q : facility.queues)
+                if (q.getId().equals(idQueue))
+                    NullAwareUtilsBean.CopyProperties(q, queuePriority);
 
-        QueuedUser queuedUser = new QueuedUser();
-        queuedUser.setUser(user);
-        queuedUser.setFacility(facility);
-        queuedUser.setQueue(queue);
+            queuePriority.priority++;
 
-        queuedUser.setPriority(priority++);
+            facility.queues.clear();
+
+            QueuedFacility queuedFacility = new QueuedFacility();
+            NullAwareUtilsBean.CopyProperties(facility, queuedFacility);
+
+            queuedFacility.queues.put(queuePriority.getId(), queuePriority);
+            queuedUser.queuedFacilities.put(queuedFacility.getId(), queuedFacility);
+        }
+        else if (queuedUser.queuedFacilities.get(idFacility) == null) {
+
+        }
+        else if (queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null) {
+
+        }
+        else queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue).priority++;
 
         queuedUserRepository.save(queuedUser);
-        facilityRepository.save(facility);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }

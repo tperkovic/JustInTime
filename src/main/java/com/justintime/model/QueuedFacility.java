@@ -7,6 +7,6 @@ import java.util.LinkedHashMap;
 
 @Data
 @Document
-public class QueuedUser extends User {
-    public LinkedHashMap<String, QueuedFacility> queuedFacilities;
+public class QueuedFacility extends iFacility {
+    public LinkedHashMap <String, QueuePriority> queues =new LinkedHashMap<>();
 }

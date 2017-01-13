@@ -6,13 +6,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document
 @Data
-public abstract class User {
-
+public abstract class iFacility {
     @Id
-    public String id;
-    public String firstName;
-    public String lastName;
-    public String mail;
-    private String password;
-    public String role;
+    protected String id;
+    protected String name;
+    protected String address;
+    protected String mail;
+    protected String telephone;
 }

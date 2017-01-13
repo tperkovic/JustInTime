@@ -9,8 +9,8 @@ import java.util.LinkedHashMap;
 
 @Document
 @Data
-public class Queue {
+public abstract class Queue {
     @Id
-    private String id;
-    private String name;
+    public String id;
+    public String name;
 }
