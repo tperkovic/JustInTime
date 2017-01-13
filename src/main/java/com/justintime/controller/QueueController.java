@@ -3,6 +3,7 @@ package com.justintime.controller;
 import com.justintime.model.*;
 import com.justintime.model.Queue;
 import com.justintime.repository.FacilityRepository;
+import com.justintime.repository.QueuePriorityRepository;
 import com.justintime.repository.QueuedUserRepository;
 import com.justintime.repository.UserRepository;
 import com.justintime.utils.NullAwareUtilsBean;
@@ -20,8 +21,6 @@ import java.util.*;
 @RequestMapping("/queue")
 public class QueueController {
 
-    private static int priority = 1;
-
     @Autowired
     FacilityRepository facilityRepository;
 
@@ -30,6 +29,9 @@ public class QueueController {
 
     @Autowired
     QueuedUserRepository queuedUserRepository;
+
+    @Autowired
+    QueuePriorityRepository queuePriorityRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/create/{idFacility}", method = RequestMethod.POST)
@@ -83,68 +85,90 @@ public class QueueController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/addUser/{idFacility}/{idQueue}/{mail:.+}", method = RequestMethod.POST)
     public ResponseEntity<QueuedUser> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
         User user = userRepository.findBymail(mail);
         Facility facility = facilityRepository.findByid(idFacility);
         QueuedUser queuedUser = queuedUserRepository.findByMail(mail);
+        QueuePriority queuePriority = queuePriorityRepository.findById(idQueue);
 
         if (user == null || facility == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
         if (queuedUser == null) {
-            QueuePriority queuePriority = new QueuePriority();
+            queuedUser = new QueuedUser();
+            NullAwareUtilsBean.CopyProperties(user, queuedUser);
+        }
+
+        if (queuePriority == null) {
+            queuePriority = new QueuePriority();
             for (Queue q : facility.queues)
-                if (q.getId().equals(idQueue))
+                if (q.getId().equals(idQueue)) {
                     NullAwareUtilsBean.CopyProperties(q, queuePriority);
+                }
+        }
 
-            queuePriority.priority++;
+        queuePriority.priority++;
+        facility.queues.clear();
 
-            facility.queues.clear();
+        QueuedFacility queuedFacility = new QueuedFacility();
+        NullAwareUtilsBean.CopyProperties(facility, queuedFacility);
+        queuedFacility.queues.put(queuePriority.getId(), queuePriority);
 
-            QueuedFacility queuedFacility = new QueuedFacility();
-            NullAwareUtilsBean.CopyProperties(facility, queuedFacility);
-
-            queuedFacility.queues.put(queuePriority.getId(), queuePriority);
+        if (queuedUser.queuedFacilities.get(idFacility) == null) {
             queuedUser.queuedFacilities.put(queuedFacility.getId(), queuedFacility);
         }
-        else if (queuedUser.queuedFacilities.get(idFacility) == null) {
-
-        }
         else if (queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null) {
-
+            queuedUser.queuedFacilities.get(idFacility).queues.put(queuePriority.getId(), queuePriority);
         }
-        else queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue).priority++;
+        else return new ResponseEntity<>(HttpStatus.CONFLICT);
 
+        queuePriorityRepository.save(queuePriority);
         queuedUserRepository.save(queuedUser);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/removeUser/{idFacility}/{idQueue}/{mail:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<QueuedUser> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
-        User user = userRepository.findBymail(mail);
-        Facility facility = facilityRepository.findByid(idFacility);
-        QueuedUser queuedUser = queuedUserRepository.findByUserAndQueue(user, facility.queues.get(idQueue));
+        QueuedUser queuedUser = queuedUserRepository.findByMail(mail);
 
-        if (user == null || facility == null || queuedUser == null)
+        if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        queuedUserRepository.delete(queuedUser);
+        queuedUser.queuedFacilities.get(idFacility).queues.remove(idQueue);
+
+        if (queuedUser.queuedFacilities.get(idFacility).queues.isEmpty())
+            queuedUser.queuedFacilities.remove(idFacility);
+
+        queuedUserRepository.save(queuedUser);
+
+        if (queuedUser.queuedFacilities.isEmpty())
+            queuedUserRepository.delete(queuedUser);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/getUser/{mail:.+}", method = RequestMethod.GET)
-    public ResponseEntity<List<QueuedUser>> getUser(@PathVariable("mail") String mail) {
-        User user = userRepository.findBymail(mail);
-        List<QueuedUser> queuedUsers = queuedUserRepository.findByUser(user);
+    public ResponseEntity<QueuedUser> getUser(@PathVariable("mail") String mail) {
+        QueuedUser queuedUsers = queuedUserRepository.findByMail(mail);
 
         return new ResponseEntity<>(queuedUsers, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/resetQueue", method = RequestMethod.DELETE)
+    public ResponseEntity<List<QueuePriority>> resetQueue() {
+        List<QueuePriority> queuePriorities = queuePriorityRepository.findAll();
+
+        queuePriorities.forEach(queuePriority -> queuePriority.setPriority(0));
+        queuePriorityRepository.save(queuePriorities);
+
+        return new ResponseEntity<>(queuePriorities, HttpStatus.OK);
     }
 
 }

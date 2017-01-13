@@ -1,12 +1,15 @@
 package com.justintime.model;
 
+
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.LinkedHashMap;
 
 @Data
-@Document
-public class QueuedUser extends AbstractUser {
-    public LinkedHashMap<String, QueuedFacility> queuedFacilities = new LinkedHashMap<>();
+public abstract class AbstractQueue {
+    @Id
+    public String id;
+    public String name;
 }
