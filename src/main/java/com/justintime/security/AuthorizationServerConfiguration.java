@@ -36,7 +36,7 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
                 .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
                 .scopes("trust")
                 .secret("secret")
-                .accessTokenValiditySeconds(600)
+                .accessTokenValiditySeconds(1800)
                 .refreshTokenValiditySeconds(43200);
     }
 

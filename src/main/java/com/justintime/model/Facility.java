@@ -3,6 +3,7 @@ package com.justintime.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.rest.core.mapping.SearchResourceMappings;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

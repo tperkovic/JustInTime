@@ -13,5 +13,4 @@ public class Queue {
     @Id
     private String id;
     private String name;
-    public LinkedHashMap<Integer, User> userList = new LinkedHashMap<>();
 }

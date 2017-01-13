@@ -2,8 +2,10 @@ package com.justintime.controller;
 
 import com.justintime.model.Facility;
 import com.justintime.model.Queue;
+import com.justintime.model.QueuedUser;
 import com.justintime.model.User;
 import com.justintime.repository.FacilityRepository;
+import com.justintime.repository.QueuedUserRepository;
 import com.justintime.repository.UserRepository;
 import com.justintime.utils.NullAwareUtilsBean;
 import org.bson.types.ObjectId;
@@ -14,24 +16,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @CrossOrigin
 @RequestMapping("/queue")
 public class QueueController {
 
-    private int priority = 1;
-    private LinkedHashMap<String, Integer> keyMap = new LinkedHashMap<>();
+    private static int priority = 1;
 
     @Autowired
     FacilityRepository facilityRepository;
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    QueuedUserRepository queuedUserRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/create/{idFacility}", method = RequestMethod.POST)
@@ -81,57 +82,52 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/addUser/{idFacility}/{idQueue}/{mail:.+}")
-    public ResponseEntity<Facility> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
-        Facility facility = facilityRepository.findByid(idFacility);
+    @RequestMapping(value = "/addUser/{idFacility}/{idQueue}/{mail:.+}", method = RequestMethod.POST)
+    public ResponseEntity<QueuedUser> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
         User user = userRepository.findBymail(mail);
-        if (facility == null || user == null)
+        Facility facility = facilityRepository.findByid(idFacility);
+
+        if (user == null || facility == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
         Queue queue = facility.queues.get(idQueue);
-        if (queue == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        queue.userList.put(priority, user);
-        keyMap.put(user.getMail(), priority);
-        priority++;
+        QueuedUser queuedUser = new QueuedUser();
+        queuedUser.setUser(user);
+        queuedUser.setFacility(facility);
+        queuedUser.setQueue(queue);
 
+        queuedUser.setPriority(priority++);
+
+        queuedUserRepository.save(queuedUser);
         facilityRepository.save(facility);
 
-        return new ResponseEntity<>(facility, HttpStatus.OK);
+        return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/removeUser/{idFacility}/{idQueue}/{mail:.+}")
-    public ResponseEntity<Facility> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
-        Facility facility = facilityRepository.findByid(idFacility);
+    @RequestMapping(value = "/removeUser/{idFacility}/{idQueue}/{mail:.+}", method = RequestMethod.DELETE)
+    public ResponseEntity<QueuedUser> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
         User user = userRepository.findBymail(mail);
-        if (facility == null || user == null)
+        Facility facility = facilityRepository.findByid(idFacility);
+        QueuedUser queuedUser = queuedUserRepository.findByUserAndQueue(user, facility.queues.get(idQueue));
+
+        if (user == null || facility == null || queuedUser == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        Queue queue = facility.queues.get(idQueue);
-        if (queue == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        queuedUserRepository.delete(queuedUser);
 
-        queue.userList.remove(keyMap.get(user.getMail()));
-        keyMap.remove(user.getMail());
-        facilityRepository.save(facility);
-
-        return new ResponseEntity<>(facility, HttpStatus.OK);
+        return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/getUser/{mail:.+}", method = RequestMethod.GET)
-    public ResponseEntity<List<Facility>> getUser(@PathVariable("mail") String mail) {
-        List<Facility> facilities = facilityRepository.findAll();
-        List<Facility> queuedFacilities = new ArrayList<>();
+    public ResponseEntity<List<QueuedUser>> getUser(@PathVariable("mail") String mail) {
+        User user = userRepository.findBymail(mail);
+        List<QueuedUser> queuedUsers = queuedUserRepository.findByUser(user);
 
-        facilities.forEach(facility -> facility.queues.values().forEach(queue -> queue.userList.values().forEach(user -> {
-            if (user.getMail().equals(mail))
-                queuedFacilities.add(facility);
-        })));
-
-        return new ResponseEntity<>(queuedFacilities, HttpStatus.OK);
+        return new ResponseEntity<>(queuedUsers, HttpStatus.OK);
     }
 
 }
