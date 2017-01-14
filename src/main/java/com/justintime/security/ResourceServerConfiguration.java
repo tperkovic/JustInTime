@@ -52,7 +52,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
     @Bean
     public RemoteTokenServices tokenServices() {
         RemoteTokenServices tokenService = new RemoteTokenServices();
-        tokenService.setCheckTokenEndpointUrl("http://localhost:8080/oauth/check_token");
+        tokenService.setCheckTokenEndpointUrl("https://justin-time.herokuapp.com/oauth/check_token");
         tokenService.setClientId("trusted-client");
         tokenService.setClientSecret("secret");
 
