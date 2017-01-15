@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.RemoteTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
@@ -48,15 +49,23 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
         return converter;
     }
 
-    @Primary
     @Bean
-    public RemoteTokenServices tokenServices() {
-        RemoteTokenServices tokenService = new RemoteTokenServices();
-        tokenService.setCheckTokenEndpointUrl("http://localhost:8080/oauth/check_token");
-        tokenService.setClientId("trusted-client");
-        tokenService.setClientSecret("secret");
+    @Primary
+    public DefaultTokenServices tokenServices() {
+        final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+        defaultTokenServices.setTokenStore(tokenStore());
 
-        return tokenService;
+        return defaultTokenServices;
     }
 
+//    @Primary
+//    @Bean
+//    public RemoteTokenServices tokenServices() {
+//        RemoteTokenServices tokenService = new RemoteTokenServices();
+//        tokenService.setCheckTokenEndpointUrl("http://localhost:8080/oauth/check_token");
+//        tokenService.setClientId("trusted-client");
+//        tokenService.setClientSecret("secret");
+//
+//        return tokenService;
+//    }
 }
