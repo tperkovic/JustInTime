@@ -1,7 +1,6 @@
 package com.justintime.controller;
 
 import com.justintime.model.*;
-import com.justintime.model.Queue;
 import com.justintime.repository.FacilityRepository;
 import com.justintime.repository.QueuePriorityRepository;
 import com.justintime.repository.QueuedUserRepository;
@@ -14,7 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
 
 @RestController
 @CrossOrigin

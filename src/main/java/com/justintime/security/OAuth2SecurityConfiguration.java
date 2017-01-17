@@ -1,7 +1,6 @@
 package com.justintime.security;
 
 
-import com.justintime.model.AbstractUser;
 import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
