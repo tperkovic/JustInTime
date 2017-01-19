@@ -27,7 +27,6 @@ public class FacilityController {
         return new ResponseEntity<>(facility, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/read-all", method = RequestMethod.GET)
     public ResponseEntity<List<Facility>> readAll(){
         List<Facility> facilities = facilityRepository.findAll();

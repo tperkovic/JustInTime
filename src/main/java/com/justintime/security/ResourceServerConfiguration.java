@@ -30,7 +30,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .antMatcher("/**").authorizeRequests()
-                .antMatchers("/", "/browser/**", "/oauth/token").permitAll()
+                .antMatchers("/", "/browser/**", "/user/create", "/facility/read-all", "/oauth/token").permitAll()
                 .and()
                 .authorizeRequests().anyRequest().authenticated();
     }

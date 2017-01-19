@@ -4,6 +4,7 @@ import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
 import com.justintime.utils.CustomUser;
 import com.justintime.utils.NullAwareUtilsBean;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +39,6 @@ public class UserController {
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
     public static final String ROLE_USER = "ROLE_USER";
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     public ResponseEntity<User> create(User user) throws Exception {
         User existingUser = userRepository.findBymail(user.getMail());
@@ -100,10 +104,31 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<User> getUser(@PathVariable("id") String id){
-        User user = userRepository.findByid(id);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @RequestMapping(value = "/me", method = RequestMethod.GET)
+    public ResponseEntity<User> getUser(@RequestParam("access_token") String accessToken) {
+        String username = "";
+
+        try {
+            URL url = new URL("http://localhost:8080/oauth/check_token?token=" + accessToken);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Authorization", "Basic dHJ1c3RlZC1jbGllbnQ6c2VjcmV0");
+
+            if (connection.getResponseCode() != 200)
+                throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            JSONObject jsonObject = new JSONObject(bufferedReader.readLine());
+            username = jsonObject.get("user_name").toString();
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        User user = userRepository.findBymail(username);
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
