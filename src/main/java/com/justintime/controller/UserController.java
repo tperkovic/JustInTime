@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -106,11 +107,12 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/me", method = RequestMethod.GET)
-    public ResponseEntity<User> getUser(@RequestParam("access_token") String accessToken) {
+    public ResponseEntity<User> getUser(@RequestParam("access_token") String accessToken, HttpServletRequest request) {
         String username = "";
+        String server = String.format("%s://%s:%d/",request.getScheme(),  request.getServerName(), request.getServerPort());
 
         try {
-            URL url = new URL("http://localhost:8080/oauth/check_token?token=" + accessToken);
+            URL url = new URL(server + "oauth/check_token?token=" + accessToken);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
