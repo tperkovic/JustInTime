@@ -18,6 +18,12 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 @EnableResourceServer
 public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
 
+    private static final String[] permitList = {
+            "/", "/browser/**",
+            "/user/create", "/facility/**",
+            "/oauth/token"
+    };
+
     @Override
     public void configure(ResourceServerSecurityConfigurer config) {
         config.tokenServices(tokenServices());
@@ -30,7 +36,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .antMatcher("/**").authorizeRequests()
-                .antMatchers("/", "/browser/**", "/user/create", "/facility/read-all", "/oauth/token").permitAll()
+                .antMatchers(permitList).permitAll()
                 .and()
                 .authorizeRequests().anyRequest().authenticated();
     }

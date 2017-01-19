@@ -61,7 +61,6 @@ public class FacilityController {
         return new ResponseEntity<>(facility, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Facility> getFacility(@PathVariable("id") String id){
         Facility facility = facilityRepository.findByid(id);

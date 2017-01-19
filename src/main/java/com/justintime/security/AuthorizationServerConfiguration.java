@@ -23,6 +23,9 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 @ComponentScan
 public class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
 
+    public static final String client = "trusted-client";
+    public static final String secret = "secret";
+
     @Autowired
     @Qualifier("authenticationManagerBean")
     private AuthenticationManager authenticationManager;
@@ -31,11 +34,11 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
     public void configure(final ClientDetailsServiceConfigurer clients) throws Exception {
 
         clients.inMemory()
-                .withClient("trusted-client")
+                .withClient(client)
                 .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
                 .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
                 .scopes("trust")
-                .secret("secret")
+                .secret(secret)
                 .accessTokenValiditySeconds(1800)
                 .refreshTokenValiditySeconds(43200);
     }
