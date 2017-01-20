@@ -20,7 +20,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
 
     private static final String[] permitList = {
             "/", "/browser/**",
-            "/user/create", "/facility/**",
+            "/user/create", "/facility/**", "/queue/**",
             "/oauth/token"
     };
 
