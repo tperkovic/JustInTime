@@ -3,6 +3,7 @@ package com.justintime.controller;
 import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
 import com.justintime.security.AuthorizationServerConfiguration;
+import com.justintime.utils.CheckTokenRequest;
 import com.justintime.utils.CustomUser;
 import com.justintime.utils.NullAwareUtilsBean;
 import org.json.JSONObject;
@@ -111,47 +112,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/me", method = RequestMethod.GET)
     public ResponseEntity<User> getUser(@RequestParam("access_token") String accessToken, HttpServletRequest request) {
-        String username = "";
-        String server = String.format("%s://%s:%d/",request.getScheme(),  request.getServerName(), request.getServerPort());
-        String clientCredentials = AuthorizationServerConfiguration.client + ":" + AuthorizationServerConfiguration.secret;
-        String encodedClient = Base64.getEncoder().encodeToString(clientCredentials.getBytes());
-        HttpURLConnection connection = null;
-        BufferedReader bufferedReader = null;
-
-        try {
-            URL url = new URL(server + "oauth/check_token?token=" + accessToken);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Authorization", "Basic " + encodedClient);
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(10000);
-
-            if (connection.getResponseCode() != 200)
-                throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
-
-            bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            JSONObject jsonObject = new JSONObject(bufferedReader.readLine());
-            username = jsonObject.get("user_name").toString();
-
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (connection != null)
-                connection.disconnect();
-        }
-
+        String username = new CheckTokenRequest().getUsername(accessToken, request);
         User user = userRepository.findBymail(username);
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
