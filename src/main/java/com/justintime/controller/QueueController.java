@@ -191,9 +191,8 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/nextUser", method = RequestMethod.GET)
-    public ResponseEntity<QueuedUser> nextUser() {
-
+    @RequestMapping(value = "/nextUser/{queueId}", method = RequestMethod.GET)
+    public ResponseEntity<QueuedUser> nextUser(@PathVariable("queueId") String queueId) {
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
