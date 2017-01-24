@@ -5,6 +5,7 @@ import com.justintime.repository.*;
 import com.justintime.utils.CheckTokenRequest;
 import com.justintime.utils.NullAwareUtilsBean;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -180,12 +181,23 @@ public class QueueController {
     }
 
     @RequestMapping(value = "/{queueId}", method = RequestMethod.GET)
-    public ResponseEntity<QueuePriority> getPriorityQueue(@PathVariable("queueId") String queueId) {
-        QueuePriority queuePriority = queuePriorityRepository.findById(queueId);
-        if (queuePriority == null)
+    public ResponseEntity<String> getNumberOfQueuedUsers(@PathVariable("queueId") String queueId) {
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(queueId);
+        if (userInQueues == null || userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        return new ResponseEntity<>(queuePriority, HttpStatus.OK);
+        JSONObject numberOfUsers = new JSONObject();
+        numberOfUsers.put("number", userInQueues.size());
+
+        return new ResponseEntity<>(numberOfUsers.toString(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/nextUser", method = RequestMethod.GET)
+    public ResponseEntity<QueuedUser> nextUser() {
+
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
