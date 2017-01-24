@@ -5,7 +5,6 @@ import com.justintime.repository.*;
 import com.justintime.utils.CheckTokenRequest;
 import com.justintime.utils.NullAwareUtilsBean;
 import org.bson.types.ObjectId;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -186,10 +185,9 @@ public class QueueController {
         if (userInQueues == null || userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        JSONObject numberOfUsers = new JSONObject();
-        numberOfUsers.put("number", userInQueues.size());
+        String numberOfUsers = String.format("{\"number\":%d}", userInQueues.size());
 
-        return new ResponseEntity<>(numberOfUsers.toString(), HttpStatus.OK);
+        return new ResponseEntity<>(numberOfUsers, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
