@@ -10,6 +10,6 @@ public interface UserInQueueRepository extends MongoRepository<UserInQueue, Stri
     @Query("{ 'queuePriority.id' : ?0 }")
     List<UserInQueue> findByQueuePriorityId(String id);
 
-    @Query("{ 'mail' : ?0 }")
-    UserInQueue findByUserMail(String mail);
+    @Query("{ 'user.id' : ?0 }")
+    UserInQueue findByUserId(String mail);
 }

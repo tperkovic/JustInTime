@@ -140,23 +140,26 @@ public class QueueController {
     @RequestMapping(value = "/removeUser/{idFacility}/{idQueue}/{mail:.+}", method = RequestMethod.DELETE)
     public ResponseEntity<QueuedUser> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @PathVariable("mail") String mail) {
         QueuedUser queuedUser = queuedUserRepository.findByMail(mail);
-        UserInQueue userInQueue = userInQueueRepository.findByUserMail(mail);
-
-        if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-        queuedUser.queuedFacilities.get(idFacility).queues.remove(idQueue);
-
-        if (queuedUser.queuedFacilities.get(idFacility).queues.isEmpty())
-            queuedUser.queuedFacilities.remove(idFacility);
-
-        queuedUserRepository.save(queuedUser);
-
-        if (queuedUser.queuedFacilities.isEmpty())
-            queuedUserRepository.delete(queuedUser);
+        UserInQueue userInQueue = userInQueueRepository.findByUserId(queuedUser.getId());
 
         if (userInQueue != null)
             userInQueueRepository.delete(userInQueue);
+
+        if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        queuedUser.queuedFacilities.get(idFacility).queues.remove(idQueue);
+
+        if (queuedUser.queuedFacilities.get(idFacility).queues.isEmpty()) {
+            queuedUser.queuedFacilities.remove(idFacility);
+        }
+
+        queuedUserRepository.save(queuedUser);
+
+        if (queuedUser.queuedFacilities.isEmpty()) {
+            queuedUserRepository.delete(queuedUser);
+        }
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
