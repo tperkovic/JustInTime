@@ -223,9 +223,6 @@ public class QueueController {
         NullAwareUtilsBean.CopyProperties(userInQueues.get(0), userInQueue);
         QueuedUser queuedUser = queuedUserRepository.findByMail(userInQueue.getUser().getMail());
 
-        if (!currentUser.isEmpty())
-            currentUser.clear();
-
         currentUser.put(idQueue, userInQueue);
 
         if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
