@@ -205,7 +205,7 @@ public class QueueController {
 
     @RequestMapping(value = "/currentUser/{idQueue}", method = RequestMethod.GET)
     public ResponseEntity<String> currentUser(@PathVariable("idQueue") String idQueue) {
-        if (currentUser == null || currentUser.isEmpty())
+        if (currentUser == null || currentUser.isEmpty() || !currentUser.containsKey(idQueue))
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         int currentNumber = currentUser.get(idQueue).getQueuePriority().getPriority();
