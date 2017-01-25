@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.PriorityQueue;
 
 @RestController
 @CrossOrigin
@@ -36,7 +36,7 @@ public class QueueController {
     @Autowired
     UserInQueueRepository userInQueueRepository;
 
-    private PriorityQueue<UserInQueue> currentUser = new PriorityQueue<>();
+    private LinkedHashMap<String, UserInQueue> currentUser = new LinkedHashMap<>();
     
     private boolean removeUserFromRepository(QueuedUser queuedUser, UserInQueue userInQueue, String idFacility, String idQueue) {
         if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null)
@@ -203,9 +203,9 @@ public class QueueController {
         return new ResponseEntity<>(numberOfUsers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/currentUser", method = RequestMethod.GET)
-    public ResponseEntity<String> currentUser() {
-        int currentNumber = currentUser.peek().getQueuePriority().getPriority();
+    @RequestMapping(value = "/currentUser/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<String> currentUser(@PathVariable("idQueue") String idQueue) {
+        int currentNumber = currentUser.get(idQueue).getQueuePriority().getPriority();
 
         String currentUserNumber = String.format("{\"currentNumber\":%d}", currentNumber);
 
@@ -226,7 +226,7 @@ public class QueueController {
         if (!currentUser.isEmpty())
             currentUser.clear();
 
-        currentUser.add(userInQueue);
+        currentUser.put(idQueue, userInQueue);
 
         if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
