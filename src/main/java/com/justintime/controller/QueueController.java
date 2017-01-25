@@ -194,7 +194,7 @@ public class QueueController {
 
     @RequestMapping(value = "/{idQueue}", method = RequestMethod.GET)
     public ResponseEntity<String> getNumberOfQueuedUsers(@PathVariable("idQueue") String idQueue) {
-        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(idQueue);
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues == null || userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
@@ -207,7 +207,7 @@ public class QueueController {
     public ResponseEntity<String> currentUser(@PathVariable("idQueue") String idQueue) {
         if (currentUser == null || currentUser.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            
+
         int currentNumber = currentUser.get(idQueue).getQueuePriority().getPriority();
 
         String currentUserNumber = String.format("{\"currentNumber\":%d}", currentNumber);
@@ -218,7 +218,7 @@ public class QueueController {
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/nextUser/{idFacility}/{idQueue}", method = RequestMethod.GET)
     public ResponseEntity<Void> nextUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue) {
-        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(idQueue);
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues == null ||userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
@@ -247,7 +247,7 @@ public class QueueController {
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/getAllUsers/{idQueue}", method = RequestMethod.GET)
     public ResponseEntity<List<UserInQueue>> getAllQueuedUsers(@PathVariable("idQueue") String idQueue) {
-        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(idQueue);
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
