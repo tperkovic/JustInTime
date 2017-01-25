@@ -11,5 +11,5 @@ public interface UserInQueueRepository extends MongoRepository<UserInQueue, Stri
     List<UserInQueue> findByQueuePriorityId(String id);
 
     @Query("{ 'user.id' : ?0 }")
-    UserInQueue findByUserId(String mail);
+    UserInQueue findByUserId(String id);
 }
