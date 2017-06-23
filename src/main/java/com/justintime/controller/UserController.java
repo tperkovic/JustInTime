@@ -1,5 +1,6 @@
 package com.justintime.controller;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
 import com.justintime.security.AuthorizationServerConfiguration;
@@ -43,6 +44,30 @@ public class UserController {
 
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
     public static final String ROLE_USER = "ROLE_USER";
+
+    @RequestMapping(value = "/google/{idToken}", method = RequestMethod.POST)
+    public ResponseEntity<User> googleLogin(@PathVariable("idToken") String idToken) throws Exception {
+        GoogleIdToken.Payload payload = new CheckTokenRequest().googleIdToken(idToken);
+        if (payload == null) return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        String googleId = (String) payload.get("sub");
+
+//        User existingUser = userRepository.findByGoogleDataId();
+//        user.setPassword(passwordEncoder.encode(user.getPassword()));
+//        user.setRole(ROLE_USER);
+//        if (existingUser != null && existingUser.getMail().equals(user.getMail())) {
+//            user.setId("User already exist!");
+//            return new ResponseEntity<>(user, HttpStatus.CONFLICT);
+//        }
+
+//        userRepository.save(user);
+//
+//        ArrayList<GrantedAuthority> authorities = new ArrayList<>();
+//        authorities.add(new SimpleGrantedAuthority(ROLE_USER));
+//        inMemoryUserDetailsManager.createUser(new CustomUser(user.getMail(), user.getPassword(), authorities));
+//
+        return new ResponseEntity<>(user, HttpStatus.CREATED);
+    }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     public ResponseEntity<User> create(User user) throws Exception {
