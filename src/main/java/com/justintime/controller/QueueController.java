@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @RestController
@@ -34,6 +35,31 @@ public class QueueController {
 
     @Autowired
     UserInQueueRepository userInQueueRepository;
+
+    private LinkedHashMap<String, UserInQueue> currentUser = new LinkedHashMap<>();
+    
+    private boolean removeUserFromRepository(QueuedUser queuedUser, UserInQueue userInQueue, String idFacility, String idQueue) {
+        if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null)
+            return false;
+
+        if (userInQueue != null) {
+            userInQueueRepository.delete(userInQueue);
+        }
+
+        queuedUser.queuedFacilities.get(idFacility).queues.remove(idQueue);
+
+        if (queuedUser.queuedFacilities.get(idFacility).queues.isEmpty()) {
+            queuedUser.queuedFacilities.remove(idFacility);
+        }
+
+        queuedUserRepository.save(queuedUser);
+
+        if (queuedUser.queuedFacilities.isEmpty()) {
+            queuedUserRepository.delete(queuedUser);
+        }
+        
+        return true;
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/create/{idFacility}", method = RequestMethod.POST)
@@ -144,26 +170,13 @@ public class QueueController {
         String username = new CheckTokenRequest().getUsername(accessToken, request);
         QueuedUser queuedUser = queuedUserRepository.findByMail(username);
 
-        if (queuedUser == null || queuedUser.queuedFacilities.get(idFacility) == null || queuedUser.queuedFacilities.get(idFacility).queues.get(idQueue) == null)
+        if (queuedUser == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         UserInQueue userInQueue = userInQueueRepository.findByUserId(queuedUser.getId());
 
-        if (userInQueue != null) {
-            userInQueueRepository.delete(userInQueue);
-        }
-
-        queuedUser.queuedFacilities.get(idFacility).queues.remove(idQueue);
-
-        if (queuedUser.queuedFacilities.get(idFacility).queues.isEmpty()) {
-            queuedUser.queuedFacilities.remove(idFacility);
-        }
-
-        queuedUserRepository.save(queuedUser);
-
-        if (queuedUser.queuedFacilities.isEmpty()) {
-            queuedUserRepository.delete(queuedUser);
-        }
+        if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
@@ -179,13 +192,46 @@ public class QueueController {
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{queueId}", method = RequestMethod.GET)
-    public ResponseEntity<QueuePriority> getPriorityQueue(@PathVariable("queueId") String queueId) {
-        QueuePriority queuePriority = queuePriorityRepository.findById(queueId);
-        if (queuePriority == null)
+    @RequestMapping(value = "/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<String> getNumberOfQueuedUsers(@PathVariable("idQueue") String idQueue) {
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
+        if (userInQueues == null || userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        return new ResponseEntity<>(queuePriority, HttpStatus.OK);
+        String numberOfUsers = String.format("{\"number\":%d}", userInQueues.size());
+
+        return new ResponseEntity<>(numberOfUsers, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/currentUser/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<String> currentUser(@PathVariable("idQueue") String idQueue) {
+        if (currentUser == null || currentUser.isEmpty() || !currentUser.containsKey(idQueue))
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        int currentNumber = currentUser.get(idQueue).getQueuePriority().getPriority();
+
+        String currentUserNumber = String.format("{\"currentNumber\":%d}", currentNumber);
+
+        return new ResponseEntity<>(currentUserNumber, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/nextUser/{idFacility}/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<Void> nextUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue) {
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
+        if (userInQueues == null ||userInQueues.isEmpty())
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        UserInQueue userInQueue = new UserInQueue();
+        NullAwareUtilsBean.CopyProperties(userInQueues.get(0), userInQueue);
+        QueuedUser queuedUser = queuedUserRepository.findByMail(userInQueue.getUser().getMail());
+
+        currentUser.put(idQueue, userInQueue);
+
+        if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -199,9 +245,9 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/getAllUsers/{queueId}", method = RequestMethod.GET)
-    public ResponseEntity<List<UserInQueue>> getAllQueuedUsers(@PathVariable("queueId") String queueId) {
-        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(queueId);
+    @RequestMapping(value = "/getAllUsers/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<List<UserInQueue>> getAllQueuedUsers(@PathVariable("idQueue") String idQueue) {
+        List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
@@ -209,9 +255,9 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/resetQueue/{queueId}", method = RequestMethod.DELETE)
-    public ResponseEntity<QueuePriority> resetQueue(@PathVariable("queueId") String queueId) {
-        QueuePriority queuePriority = queuePriorityRepository.findById(queueId);
+    @RequestMapping(value = "/resetQueue/{idQueue}", method = RequestMethod.DELETE)
+    public ResponseEntity<QueuePriority> resetQueue(@PathVariable("idQueue") String idQueue) {
+        QueuePriority queuePriority = queuePriorityRepository.findById(idQueue);
 
         queuePriority.setPriority(0);
         queuePriorityRepository.save(queuePriority);

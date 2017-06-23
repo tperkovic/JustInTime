@@ -11,7 +11,6 @@ public class UserInQueue {
     @Id
     private String id;
 
-    @DBRef
     private QueuePriority queuePriority;
 
     @DBRef

@@ -3,11 +3,9 @@ package com.justintime.controller;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
-import com.justintime.security.AuthorizationServerConfiguration;
 import com.justintime.utils.CheckTokenRequest;
 import com.justintime.utils.CustomUser;
 import com.justintime.utils.NullAwareUtilsBean;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,13 +17,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @RestController
