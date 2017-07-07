@@ -25,6 +25,7 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
 
     public static final String client = "trusted-client";
     public static final String secret = "secret";
+    public static final String scope = "trust";
 
     @Autowired
     @Qualifier("authenticationManagerBean")
@@ -37,9 +38,9 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
                 .withClient(client)
                 .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
                 .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-                .scopes("trust")
+                .scopes(scope)
                 .secret(secret)
-                .accessTokenValiditySeconds(1800)
+                .accessTokenValiditySeconds(3600)
                 .refreshTokenValiditySeconds(43200);
     }
 
