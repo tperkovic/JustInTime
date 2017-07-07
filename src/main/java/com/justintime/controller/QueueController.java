@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -114,8 +115,8 @@ public class QueueController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/addUser/{idFacility}/{idQueue}", method = RequestMethod.POST)
-    public ResponseEntity<QueuedUser> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @RequestParam("access_token") String accessToken, HttpServletRequest request) {
-        String username = new TokenRequest().endpoint(TokenRequest.CHECK_TOKEN_URL + accessToken, request).get("user_name").toString();
+    public ResponseEntity<QueuedUser> addUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Principal principal) {
+        String username = principal.getName();
 
         User user = userRepository.findBymail(username);
         Facility facility = facilityRepository.findByid(idFacility);
@@ -167,8 +168,8 @@ public class QueueController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/removeUser/{idFacility}/{idQueue}", method = RequestMethod.DELETE)
-    public ResponseEntity<QueuedUser> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, @RequestParam("access_token") String accessToken, HttpServletRequest request) {
-        String username = new TokenRequest().endpoint(TokenRequest.CHECK_TOKEN_URL + accessToken, request).get("user_name").toString();
+    public ResponseEntity<QueuedUser> removeUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Principal principal) {
+        String username = principal.getName();
         QueuedUser queuedUser = queuedUserRepository.findByMail(username);
 
         if (queuedUser == null)
@@ -184,8 +185,8 @@ public class QueueController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/getQueuedUser", method = RequestMethod.GET)
-    public ResponseEntity<QueuedUser> getQueuedUser(@RequestParam("access_token") String accessToken, HttpServletRequest request) {
-        String username = new TokenRequest().endpoint(TokenRequest.CHECK_TOKEN_URL + accessToken, request).get("user_name").toString();
+    public ResponseEntity<QueuedUser> getQueuedUser(Principal principal) {
+        String username = principal.getName();
         QueuedUser queuedUser = queuedUserRepository.findByMail(username);
         if (queuedUser == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

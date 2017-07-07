@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigInteger;
+import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -155,8 +156,8 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/me", method = RequestMethod.GET)
-    public ResponseEntity<User> getUser(@RequestParam("access_token") String accessToken, HttpServletRequest request) {
-        String username = new TokenRequest().endpoint(TokenRequest.CHECK_TOKEN_URL + accessToken, request).get("user_name").toString();
+    public ResponseEntity<User> getUser(Principal principal) {
+        String username = principal.getName();
         User user = userRepository.findBymail(username);
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
