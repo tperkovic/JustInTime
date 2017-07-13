@@ -5,8 +5,10 @@ import com.justintime.model.User;
 import com.justintime.repository.UserRepository;
 import com.justintime.utils.CustomUser;
 import com.justintime.utils.NullAwareUtilsBean;
+import com.justintime.utils.SocialUser;
 import com.justintime.utils.TokenRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.social.FacebookAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +18,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerEndpointsConfiguration;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.social.connect.ConnectionRepository;
+import org.springframework.social.connect.UserProfile;
+import org.springframework.social.facebook.api.Facebook;
+import org.springframework.social.facebook.api.impl.FacebookTemplate;
+import org.springframework.social.facebook.connect.FacebookConnectionFactory;
+import org.springframework.social.oauth2.GrantType;
+import org.springframework.social.oauth2.OAuth2Operations;
+import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigInteger;
@@ -24,6 +35,7 @@ import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 @RestController
 @CrossOrigin
@@ -42,10 +54,9 @@ public class UserController {
     @Autowired
     AuthorizationServerEndpointsConfiguration configuration;
 
-    private final SecureRandom random = new SecureRandom();
-
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
     public static final String ROLE_USER = "ROLE_USER";
+
 
     @RequestMapping(value = "/google/{idToken:.+}", method = RequestMethod.POST)
     public ResponseEntity<?> googleLogin(@PathVariable("idToken") String idToken) throws Exception {
@@ -60,14 +71,7 @@ public class UserController {
         }
         if (existingUser == null) {
 
-            User user = new User();
-            user.googleId = googleId;
-            user.firstName = (String) payload.get("given_name");
-            user.lastName = (String) payload.get("family_name");
-            user.mail = payload.getEmail();
-            user.setRole(ROLE_USER);
-            String generatedPass = new BigInteger(130, random).toString(32);
-            user.setPassword(passwordEncoder.encode(generatedPass));
+            User user = new SocialUser().createUser(googleId, null, (String) payload.get("given_name"), (String) payload.get("family_name"), payload.getEmail(), passwordEncoder);
 
             userRepository.save(user);
 
@@ -80,6 +84,45 @@ public class UserController {
 
         if (existingUser.getGoogleId() == null && existingUser.getGoogleId().isEmpty()) {
             existingUser.setGoogleId(googleId);
+            userRepository.save(existingUser);
+        }
+
+        OAuth2AccessToken accessToken =
+                new TokenRequest().accessToken(existingUser.getMail(), existingUser.getRole(), configuration.getEndpointsConfigurer().getTokenServices());
+
+        return new ResponseEntity<>(accessToken, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/facebook/{token:.+}", method = RequestMethod.POST)
+    public ResponseEntity<?> facebookLogin(@PathVariable("token") String token) throws Exception {
+        Facebook facebook = new FacebookTemplate(token);
+        String [] fields = {"id", "email", "first_name", "installed", "last_name", "verified"};
+        org.springframework.social.facebook.api.User facebookUser = facebook.fetchObject("me", org.springframework.social.facebook.api.User.class, fields);
+        if (facebookUser == null)
+            return new ResponseEntity<>("Facebook user info not received!", HttpStatus.NOT_FOUND);
+
+        if (!facebookUser.isVerified() || !facebookUser.isInstalled())
+            return new ResponseEntity<>("Facebook user is not trusted!", HttpStatus.FORBIDDEN);
+
+        User existingUser = userRepository.findByfacebookId(facebookUser.getId());
+        if (existingUser == null) {
+            existingUser = userRepository.findBymail(facebookUser.getEmail());
+        }
+        if (existingUser == null)
+        {
+            User user = new SocialUser().createUser(null, facebookUser.getId(), facebookUser.getFirstName(), facebookUser.getLastName(), facebookUser.getEmail(), passwordEncoder);
+
+            userRepository.save(user);
+
+            ArrayList<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(ROLE_USER));
+            inMemoryUserDetailsManager.createUser(new CustomUser(user.getMail(), user.getPassword(), authorities));
+
+            existingUser = user;
+        }
+
+        if (existingUser.getFacebookId() == null && existingUser.getFacebookId().isEmpty()) {
+            existingUser.setFacebookId(facebookUser.getId());
             userRepository.save(existingUser);
         }
 

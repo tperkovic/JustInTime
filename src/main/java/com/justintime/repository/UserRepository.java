@@ -9,4 +9,5 @@ public interface UserRepository extends MongoRepository<User, String>{
     User findBymail(String mail);
     User findByid(String id);
     User findBygoogleId(String id);
+    User findByfacebookId(String id);
 }

@@ -9,6 +9,7 @@ public abstract class AbstractUser {
     @Id
     public String id;
     public String googleId;
+    public String facebookId;
     public String firstName;
     public String lastName;
     public String mail;
