@@ -3,7 +3,6 @@ package com.justintime.controller;
 import com.justintime.model.*;
 import com.justintime.repository.*;
 import com.justintime.utils.NullAwareUtilsBean;
-import com.justintime.utils.TokenRequest;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +35,9 @@ public class QueueController {
 
     @Autowired
     UserInQueueRepository userInQueueRepository;
+
+    @Autowired
+    TimeHistoryRepository timeHistoryRepository;
 
     private LinkedHashMap<String, UserInQueue> currentUser = new LinkedHashMap<>();
     
@@ -159,9 +161,15 @@ public class QueueController {
         userInQueue.setQueuePriority(queuePriority);
         userInQueue.setUser(user);
 
+        TimeHistory timeHistory = new TimeHistory();
+        timeHistory.setQueuePriority(queuePriority);
+        timeHistory.setUser(user);
+        timeHistory.setArrivalTime(Instant.now());
+
         userInQueueRepository.save(userInQueue);
         queuePriorityRepository.save(queuePriority);
         queuedUserRepository.save(queuedUser);
+        timeHistoryRepository.save(timeHistory);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
@@ -179,6 +187,10 @@ public class QueueController {
 
         if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        TimeHistory timeHistory = timeHistoryRepository.findByQueuePriorityAndUser(userInQueue.getQueuePriority(), userInQueue.getUser());
+        if (timeHistory != null)
+            timeHistoryRepository.delete(timeHistory);
 
         return new ResponseEntity<>(queuedUser, HttpStatus.OK);
     }
@@ -219,9 +231,14 @@ public class QueueController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/nextUser/{idFacility}/{idQueue}", method = RequestMethod.GET)
-    public ResponseEntity<Void> nextUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue) {
+    public ResponseEntity<Void> nextUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Principal principal) {
         List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues == null ||userInQueues.isEmpty())
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        String employerUsername = principal.getName();
+        User employer = userRepository.findBymail(employerUsername);
+        if (employer == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         UserInQueue userInQueue = new UserInQueue();
@@ -232,6 +249,13 @@ public class QueueController {
 
         if (!removeUserFromRepository(queuedUser, userInQueue, idFacility, idQueue))
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        TimeHistory timeHistory = timeHistoryRepository.findByQueuePriorityAndUser(userInQueue.getQueuePriority(), userInQueue.getUser());
+        if (timeHistory != null) {
+            timeHistory.setEmployer(employer);
+            timeHistory.setServiceTime(Instant.now());
+            timeHistoryRepository.save(timeHistory);
+        }
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -276,6 +300,20 @@ public class QueueController {
         queuePriorityRepository.save(queuePriorities);
 
         return new ResponseEntity<>(queuePriorities, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @RequestMapping(value = "/openQueue/{idQueue}", method = RequestMethod.POST)
+    public ResponseEntity<?> openQueue(@PathVariable("idQueue") String idQueue, Integer hours) {
+        QueuePriority queuePriority = queuePriorityRepository.findById(idQueue);
+
+        long seconds = hours.longValue() * 3600;
+
+        queuePriority.setOpeningTime(Instant.now());
+        queuePriority.setOpeningTime(Instant.now().plusSeconds(seconds));
+        queuePriorityRepository.save(queuePriority);
+
+        return new ResponseEntity<>(String.format("Queue %s is now opened!", queuePriority.getName()), HttpStatus.OK);
     }
 
 }
