@@ -303,17 +303,27 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/openQueue/{idQueue}", method = RequestMethod.POST)
-    public ResponseEntity<?> openQueue(@PathVariable("idQueue") String idQueue, Integer hours) {
-        QueuePriority queuePriority = queuePriorityRepository.findById(idQueue);
+    @RequestMapping(value = "/openQueue/{idFacility}/{idQueue}", method = RequestMethod.POST)
+    public ResponseEntity<?> openQueue(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue,
+                                       @RequestParam(defaultValue = "8", required = false) Integer hours, Principal principal) {
+
+        QueuePriority queuePriority = new QueuePriority();
+        String username = principal.getName();
+
+        Facility facility = facilityRepository.findByid(idFacility);
+        facility.queues.forEach(queue -> {
+            if (queue.getId().equals(idQueue)) {
+                NullAwareUtilsBean.CopyProperties(queue, queuePriority);
+            }
+        });
 
         long seconds = hours.longValue() * 3600;
 
         queuePriority.setOpeningTime(Instant.now());
-        queuePriority.setOpeningTime(Instant.now().plusSeconds(seconds));
+        queuePriority.setClosingTime(Instant.now().plusSeconds(seconds));
         queuePriorityRepository.save(queuePriority);
 
-        return new ResponseEntity<>(String.format("Queue %s is now opened!", queuePriority.getName()), HttpStatus.OK);
+        return new ResponseEntity<>(String.format("Welcome %1$s, Queue '%2$s' is now opened!", username, queuePriority.getName()), HttpStatus.OK);
     }
 
 }

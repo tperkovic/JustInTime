@@ -2,7 +2,8 @@ package com.justintime.utils;
 
 
 import com.justintime.security.AuthorizationServerConfiguration;
-import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -20,16 +21,16 @@ public class HttpRequest {
     private HttpURLConnection connection = null;
     private BufferedReader bufferedReader = null;
 
-    public JSONObject openConnection(String uri, HttpServletRequest request, boolean isOurEndpoint) {
+    public ResponseEntity<?> openConnection(String uri, String requestMethod, HttpServletRequest request, boolean isOurEndpoint) {
 
-        server = String.format("%s://%s:%d/",request.getScheme(),  request.getServerName(), request.getServerPort());
+        server = String.format("%s://%s:%d/", request.getScheme(), request.getServerName(), request.getServerPort());
         URL url;
 
         try {
             if (isOurEndpoint) url = new URL(server + uri);
             else url = new URL(uri);
             connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
+            connection.setRequestMethod(requestMethod);
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Authorization", "Basic " + encodedClient);
             connection.setConnectTimeout(10000);
@@ -39,18 +40,15 @@ public class HttpRequest {
                 throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
 
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            return new JSONObject(bufferedReader.readLine());
+            return new ResponseEntity<>(bufferedReader.readLine(), HttpStatus.OK);
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             if (bufferedReader != null) {
                 try {
                     bufferedReader.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
