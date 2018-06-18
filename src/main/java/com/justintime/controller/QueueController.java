@@ -66,8 +66,11 @@ public class QueueController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/create/{idFacility}", method = RequestMethod.POST)
-    public ResponseEntity<Facility> createQueue(@PathVariable("idFacility") String idFacility, Queue queue){
+    public ResponseEntity<Facility> createFacilityQueue(@PathVariable("idFacility") String idFacility, Queue queue){
         Facility facility = facilityRepository.findByid(idFacility);
+        if (facility == null)
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
         ObjectId oid = new ObjectId();
         queue.setId(oid.toString());
         facility.queues.add(queue);
@@ -79,13 +82,12 @@ public class QueueController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/update/{idFacility}/{idQueue}", method = RequestMethod.PUT)
-    public ResponseEntity<Facility> updateQueue(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Queue queueParam){
+    public ResponseEntity<Facility> updateFacilityQueue(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Queue queueParam){
         Facility facility = facilityRepository.findByid(idFacility);
         if (facility == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        for (Iterator<Queue> iterator = facility.queues.iterator(); iterator.hasNext();) {
-            Queue queue = iterator.next();
+        for (Queue queue : facility.queues) {
             if (queue.getId().equals(idQueue))
                 NullAwareUtilsBean.CopyProperties(queueParam, queue);
         }
@@ -217,8 +219,8 @@ public class QueueController {
         return new ResponseEntity<>(numberOfUsers, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/currentUser/{idQueue}", method = RequestMethod.GET)
-    public ResponseEntity<String> currentUser(@PathVariable("idQueue") String idQueue) {
+    @RequestMapping(value = "/getCurrentUserNumber/{idQueue}", method = RequestMethod.GET)
+    public ResponseEntity<String> getCurrentUserNumber(@PathVariable("idQueue") String idQueue) {
         if (currentUser == null || currentUser.isEmpty() || !currentUser.containsKey(idQueue))
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
@@ -230,7 +232,7 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/nextUser/{idFacility}/{idQueue}", method = RequestMethod.GET)
+    @RequestMapping(value = "/nextUser/{idFacility}/{idQueue}", method = RequestMethod.POST)
     public ResponseEntity<Void> nextUser(@PathVariable("idFacility") String idFacility, @PathVariable("idQueue") String idQueue, Principal principal) {
         List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues == null ||userInQueues.isEmpty())
@@ -261,8 +263,8 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/getUser/{mail:.+}", method = RequestMethod.GET)
-    public ResponseEntity<QueuedUser> getUser(@PathVariable("mail") String mail) {
+    @RequestMapping(value = "/getQueuedUser/{mail:.+}", method = RequestMethod.GET)
+    public ResponseEntity<QueuedUser> getQueuedUserByMail(@PathVariable("mail") String mail) {
         QueuedUser queuedUser = queuedUserRepository.findByMail(mail);
         if (queuedUser == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -271,7 +273,7 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping(value = "/getAllUsers/{idQueue}", method = RequestMethod.GET)
+    @RequestMapping(value = "/getAllQueuedUsers/{idQueue}", method = RequestMethod.GET)
     public ResponseEntity<List<UserInQueue>> getAllQueuedUsers(@PathVariable("idQueue") String idQueue) {
         List<UserInQueue> userInQueues = userInQueueRepository.findByQueuePriorityId(new ObjectId(idQueue));
         if (userInQueues.isEmpty())

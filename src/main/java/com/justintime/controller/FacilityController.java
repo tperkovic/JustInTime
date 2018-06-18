@@ -21,14 +21,14 @@ public class FacilityController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/create", method = RequestMethod.POST)
-    public ResponseEntity<Facility> create(Facility facility){
+    public ResponseEntity<Facility> createFacility(Facility facility){
         facilityRepository.save(facility);
 
         return new ResponseEntity<>(facility, HttpStatus.CREATED);
     }
 
     @RequestMapping(value = "/read-all", method = RequestMethod.GET)
-    public ResponseEntity<List<Facility>> readAll(){
+    public ResponseEntity<List<Facility>> getAllFacilities(){
         List<Facility> facilities = facilityRepository.findAll();
         if (facilities.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

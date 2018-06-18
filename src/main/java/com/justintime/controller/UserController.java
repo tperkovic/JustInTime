@@ -153,7 +153,7 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/read-all", method = RequestMethod.GET)
-    public ResponseEntity<List<User>> readAll(){
+    public ResponseEntity<List<User>> getAllUsers(){
         List<User> users = userRepository.findAll();
         if (users.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -168,7 +168,7 @@ public class UserController {
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        if (!(userParam.getPassword() == null))
+        if (userParam.getPassword() != null)
             userParam.setPassword(passwordEncoder.encode(userParam.getPassword()));
 
         if (user.getRole() != null && user.getRole().equals(ROLE_ADMIN))
@@ -199,7 +199,7 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @RequestMapping(value = "/me", method = RequestMethod.GET)
-    public ResponseEntity<User> getUser(Principal principal) {
+    public ResponseEntity<User> getCurrentUser(Principal principal) {
         String username = principal.getName();
         User user = userRepository.findBymail(username);
         if (user == null)
@@ -210,7 +210,7 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/{mail:.+}", method = RequestMethod.GET)
-    public ResponseEntity<User> getMail(@PathVariable("mail") String mail){
+    public ResponseEntity<User> getUserByMail(@PathVariable("mail") String mail){
         User user = userRepository.findBymail(mail);
         if (user == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

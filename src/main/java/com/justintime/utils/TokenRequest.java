@@ -6,7 +6,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.justintime.security.AuthorizationServerConfiguration;
-import org.omg.CORBA.PRIVATE_MEMBER;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,13 +14,6 @@ import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.OAuth2Request;
 import org.springframework.security.oauth2.provider.token.AuthorizationServerTokenServices;
-import org.springframework.social.connect.Connection;
-import org.springframework.social.connect.UserProfile;
-import org.springframework.social.facebook.api.Facebook;
-import org.springframework.social.facebook.api.impl.FacebookTemplate;
-import org.springframework.social.facebook.connect.FacebookConnectionFactory;
-import org.springframework.social.oauth2.AccessGrant;
-import org.springframework.social.oauth2.OAuth2Operations;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -31,7 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class TokenRequest {
-    private static final String GOOGLE_CLIENT_ID =  "892432124865-sbn3gr9incn89dit7t13jbnqv7qfhemp.apps.googleusercontent.com";
+    private static final String GOOGLE_CLIENT_ID = "892432124865-sbn3gr9incn89dit7t13jbnqv7qfhemp.apps.googleusercontent.com";
 
     public GoogleIdToken.Payload googleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new JacksonFactory())
@@ -43,7 +35,7 @@ public class TokenRequest {
             GoogleIdToken.Payload payload = idToken.getPayload();
 
             boolean emailVerified = Boolean.valueOf(payload.getEmailVerified());
-            String  googleClient = (String) payload.get("aud");
+            String googleClient = (String) payload.get("aud");
 
             if (emailVerified && googleClient.equals(GOOGLE_CLIENT_ID)) return payload;
             else return null;

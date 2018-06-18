@@ -24,19 +24,19 @@ import java.util.stream.Collectors;
 @RequestMapping("/test")
 public class TestController {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Lazy
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
     private static ArrayList<Pair<String, String>> admins = new ArrayList<>();
+
     static {
         admins.add(Pair.of("tperkovic@unipu.hr", "123456"));
         admins.add(Pair.of("aduda@unipu.hr", "54321"));
         admins.add(Pair.of("lpican@unipu.hr", "mahaaaCI"));
     }
+
+    @Lazy
+    @Autowired
+    PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
     private HashMap<String, User> generatedUsersStorage = new HashMap<>();
     private HashMap<String, JSONObject> logedUsers = new HashMap<>();
 
@@ -78,7 +78,7 @@ public class TestController {
     public ResponseEntity<?> simulate(HttpServletRequest httpServletRequest) {
         HttpRequest request = new HttpRequest();
         String mupId = "5829f97b21ad6507d041f480";
-        String[] mupRedovi = { "5878cf2bb3646416b86ba1aa", "58853e5f1a67a300047bb85a", "5878cf40b3646416b86ba1ab" };
+        String[] mupRedovi = {"5878cf2bb3646416b86ba1aa", "58853e5f1a67a300047bb85a", "5878cf40b3646416b86ba1ab"};
         ArrayList<String> responses = new ArrayList<>();
         String adminUsername;
         String adminPassword;
@@ -94,6 +94,5 @@ public class TestController {
 
         return new ResponseEntity<>(responses, HttpStatus.OK);
     }
-
 
 }
